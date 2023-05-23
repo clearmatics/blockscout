@@ -145,6 +145,7 @@ defmodule EthereumJSONRPC.Geth do
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
+    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
   end
@@ -241,7 +242,7 @@ defmodule EthereumJSONRPC.Geth do
     {:error, annotated_error}
   end
 
-  defp prepare_calls(calls) do
+  def prepare_calls(calls) do
     case Application.get_env(:ethereum_jsonrpc, __MODULE__)[:tracer] do
       "call_tracer" -> {calls, 0} |> parse_call_tracer_calls([], [], false) |> Enum.reverse()
       "js" -> calls
