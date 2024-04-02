@@ -118,7 +118,9 @@ defmodule Explorer.Application do
         configure(Explorer.Counters.BlockBurntFeeCounter),
         configure(Explorer.Counters.BlockPriorityFeeCounter),
         configure(Explorer.Counters.AverageBlockTime),
-        configure(Explorer.Counters.Bridge),
+        configure(Explorer.Counters.LastOutputRootSizeCounter),
+        configure(Explorer.Counters.FreshPendingTransactionsCounter),
+        configure(Explorer.Counters.Transactions24hStats),
         configure(Explorer.Validator.MetadataProcessor),
         configure(Explorer.Tags.AddressTag.Cataloger),
         configure(MinMissingBlockNumber),
@@ -127,9 +129,14 @@ defmodule Explorer.Application do
         configure(Explorer.TokenInstanceOwnerAddressMigration.Supervisor),
         sc_microservice_configure(Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand),
         configure(Explorer.Chain.Cache.RootstockLockedBTC),
+        configure(Explorer.Chain.Cache.OptimismFinalizationPeriod),
         configure(Explorer.Migrator.TransactionsDenormalization),
         configure(Explorer.Migrator.AddressCurrentTokenBalanceTokenType),
-        configure(Explorer.Migrator.AddressTokenBalanceTokenType)
+        configure(Explorer.Migrator.AddressTokenBalanceTokenType),
+        configure(Explorer.Migrator.SanitizeMissingBlockRanges),
+        configure(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers),
+        configure(Explorer.Migrator.TokenTransferTokenType),
+        configure_chain_type_dependent_process(Explorer.Chain.Cache.StabilityValidatorsCounters, "stability")
       ]
       |> List.flatten()
 
@@ -138,7 +145,19 @@ defmodule Explorer.Application do
 
   defp repos_by_chain_type do
     if Mix.env() == :test do
-      [Explorer.Repo.PolygonEdge, Explorer.Repo.PolygonZkevm, Explorer.Repo.RSK, Explorer.Repo.Suave]
+      [
+        Explorer.Repo.Beacon,
+        Explorer.Repo.Optimism,
+        Explorer.Repo.PolygonEdge,
+        Explorer.Repo.PolygonZkevm,
+        Explorer.Repo.ZkSync,
+        Explorer.Repo.RSK,
+        Explorer.Repo.Shibarium,
+        Explorer.Repo.Suave,
+        Explorer.Repo.BridgedTokens,
+        Explorer.Repo.Filecoin,
+        Explorer.Repo.Stability
+      ]
     else
       []
     end
@@ -158,6 +177,14 @@ defmodule Explorer.Application do
 
   defp configure(process) do
     if should_start?(process) do
+      process
+    else
+      []
+    end
+  end
+
+  defp configure_chain_type_dependent_process(process, chain_type) do
+    if Application.get_env(:explorer, :chain_type) == chain_type do
       process
     else
       []

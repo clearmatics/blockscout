@@ -8,7 +8,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
       from: 2
     ]
 
-  alias Explorer.{Chain, Market, PagingOptions, Repo}
+  alias Explorer.{Market, PagingOptions, Repo}
   alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
   alias Explorer.Chain.CSVExport.Helper
@@ -34,7 +34,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
-      |> (&if(Helper.is_valid_filter?(filter_type, filter_value, "transactions"),
+      |> (&if(Helper.valid_filter?(filter_type, filter_value, "transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1
           )).()
@@ -105,7 +105,7 @@ defmodule Explorer.Chain.CSVExport.AddressTransactionCsvExporter do
 
   defp fee(transaction) do
     transaction
-    |> Chain.fee(:wei)
+    |> Transaction.fee(:wei)
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"

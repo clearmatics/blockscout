@@ -117,7 +117,7 @@ defmodule Explorer.Account.Notifier.Notify do
   direction  = :incoming || :outgoing
   """
   def build_watchlist_notification(%Explorer.Account.WatchlistAddress{} = address, summary, direction) do
-    if is_watched(address, summary, direction) do
+    if watched?(address, summary, direction) do
       %WatchlistNotification{
         watchlist_address_id: address.id,
         watchlist_id: address.watchlist_id,
@@ -140,7 +140,8 @@ defmodule Explorer.Account.Notifier.Notify do
     end
   end
 
-  defp is_watched(%WatchlistAddress{} = address, %{type: type}, direction) do
+  # credo:disable-for-next-line
+  defp watched?(%WatchlistAddress{} = address, %{type: type}, direction) do
     case {type, direction} do
       {"COIN", :incoming} -> address.watch_coin_input
       {"COIN", :outgoing} -> address.watch_coin_output
@@ -150,6 +151,8 @@ defmodule Explorer.Account.Notifier.Notify do
       {"ERC-721", :outgoing} -> address.watch_erc_721_output
       {"ERC-1155", :incoming} -> address.watch_erc_1155_input
       {"ERC-1155", :outgoing} -> address.watch_erc_1155_output
+      {"ERC-404", :incoming} -> address.watch_erc_404_input
+      {"ERC-404", :outgoing} -> address.watch_erc_404_output
     end
   end
 

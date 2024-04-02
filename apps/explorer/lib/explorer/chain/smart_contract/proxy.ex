@@ -13,7 +13,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
       string_to_address_hash: 1
     ]
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0, is_burn_signature_or_nil: 1]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0, is_burn_signature: 1]
 
   # supported signatures:
   # 5c60da1b = keccak256(implementation())
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   Fetches into DB proxy contract implementation's address and name from different proxy patterns
   """
   @spec fetch_implementation_address_hash(Hash.Address.t(), list(), boolean() | nil, [api?]) ::
-          {String.t() | nil, String.t() | nil}
+          {String.t() | nil | :empty, String.t() | nil | :empty}
   def fetch_implementation_address_hash(proxy_address_hash, proxy_abi, metadata_from_verified_twin, options)
       when not is_nil(proxy_address_hash) and not is_nil(proxy_abi) do
     implementation_address_hash_string = get_implementation_address_hash_string(proxy_address_hash, proxy_abi)
@@ -146,11 +146,11 @@ defmodule Explorer.Chain.SmartContract.Proxy do
            json_rpc_named_arguments
          ) do
       {:ok, empty_address_hash_string}
-      when is_burn_signature_or_nil(empty_address_hash_string) ->
+      when is_burn_signature(empty_address_hash_string) ->
         nil
 
-      {:ok, implementation_logic_address_hash_string} ->
-        implementation_logic_address_hash_string
+      {:ok, "0x" <> storage_value} ->
+        extract_address_hex_from_storage_pointer(storage_value)
 
       _ ->
         nil
@@ -288,5 +288,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     |> Enum.find(fn input ->
       Map.get(input, "name") == name
     end)
+  end
+
+  @doc """
+  Decodes 20 bytes address hex from smart-contract storage pointer value
+  """
+  @spec extract_address_hex_from_storage_pointer(binary) :: binary
+  def extract_address_hex_from_storage_pointer(storage_value) when is_binary(storage_value) do
+    address_hex = storage_value |> String.slice(-40, 40) |> String.pad_leading(40, ["0"])
+
+    "0x" <> address_hex
   end
 end

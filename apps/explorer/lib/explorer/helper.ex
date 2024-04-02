@@ -1,6 +1,6 @@
 defmodule Explorer.Helper do
   @moduledoc """
-  Common explorer helper
+  Auxiliary common functions.
   """
 
   alias ABI.TypeDecoder
@@ -30,14 +30,41 @@ defmodule Explorer.Helper do
     |> TypeDecoder.decode_raw(types)
   end
 
-  @spec parse_integer(binary() | nil) :: integer() | nil
-  def parse_integer(nil), do: nil
-
-  def parse_integer(string) do
-    case Integer.parse(string) do
-      {number, ""} -> number
+  def parse_integer(integer_string) when is_binary(integer_string) do
+    case Integer.parse(integer_string) do
+      {integer, ""} -> integer
       _ -> nil
     end
+  end
+
+  def parse_integer(value) when is_integer(value) do
+    value
+  end
+
+  def parse_integer(_integer_string), do: nil
+
+  @doc """
+  Parses number from hex string or decimal number string
+  """
+  @spec parse_number(binary() | nil) :: integer() | nil
+  def parse_number(nil), do: nil
+
+  def parse_number(number) when is_integer(number) do
+    number
+  end
+
+  def parse_number("0x" <> hex_number) do
+    {number, ""} = Integer.parse(hex_number, 16)
+
+    number
+  end
+
+  def parse_number(""), do: 0
+
+  def parse_number(string_number) do
+    {number, ""} = Integer.parse(string_number, 10)
+
+    number
   end
 
   @doc """
@@ -92,4 +119,29 @@ defmodule Explorer.Helper do
       decoded -> decoded
     end
   end
+
+  @doc """
+  Checks if input is a valid URL
+  """
+  @spec validate_url(String.t() | nil) :: {:ok, String.t()} | :error
+  def validate_url(url) when is_binary(url) do
+    case URI.parse(url) do
+      %URI{host: nil} -> :error
+      _ -> {:ok, url}
+    end
+  end
+
+  def validate_url(_), do: :error
+
+  @doc """
+    Validate url
+  """
+  @spec valid_url?(String.t()) :: boolean()
+  def valid_url?(string) when is_binary(string) do
+    uri = URI.parse(string)
+
+    !is_nil(uri.scheme) && !is_nil(uri.host)
+  end
+
+  def valid_url?(_), do: false
 end

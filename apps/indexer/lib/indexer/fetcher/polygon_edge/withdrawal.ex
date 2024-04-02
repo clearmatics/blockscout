@@ -3,6 +3,8 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
   Fills polygon_edge_withdrawals DB table.
   """
 
+  # todo: this module is deprecated and should be removed
+
   use GenServer
   use Indexer.Fetcher
 
@@ -12,7 +14,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.Helper, only: [decode_data: 2]
-  import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5, get_block_number_by_tag: 3]
+  import Indexer.Fetcher.PolygonEdge, only: [fill_block_range: 5]
   import Indexer.Helper, only: [log_topic_to_string: 1]
 
   alias ABI.TypeDecoder
@@ -20,6 +22,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
   alias Explorer.Chain.Log
   alias Explorer.Chain.PolygonEdge.Withdrawal
   alias Indexer.Fetcher.PolygonEdge
+  alias Indexer.Helper
 
   @fetcher_name :polygon_edge_withdrawal
 
@@ -107,7 +110,8 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
 
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = get_block_number_by_tag("latest", json_rpc_named_arguments, 100_000_000)
+      {:ok, latest_block} =
+        Helper.get_block_number_by_tag("latest", json_rpc_named_arguments, Helper.infinite_retries_number())
 
       fill_block_range(
         safe_block + 1,
@@ -193,7 +197,7 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
             state_sender,
             @l2_state_synced_event,
             json_rpc_named_arguments,
-            100_000_000
+            Helper.infinite_retries_number()
           )
 
         Enum.map(result, fn event ->
@@ -206,11 +210,18 @@ defmodule Indexer.Fetcher.PolygonEdge.Withdrawal do
         end)
       end
 
-    {:ok, _} =
-      Chain.import(%{
-        polygon_edge_withdrawals: %{params: withdrawals},
-        timeout: :infinity
-      })
+    # here we explicitly check CHAIN_TYPE as Dialyzer throws an error otherwise
+    import_options =
+      if Application.get_env(:explorer, :chain_type) == "polygon_edge" do
+        %{
+          polygon_edge_withdrawals: %{params: withdrawals},
+          timeout: :infinity
+        }
+      else
+        %{}
+      end
+
+    {:ok, _} = Chain.import(import_options)
 
     Enum.count(withdrawals)
   end

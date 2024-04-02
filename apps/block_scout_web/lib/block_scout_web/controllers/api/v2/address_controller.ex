@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       delete_parameters_from_next_page_params: 1,
       token_transfers_types_options: 1,
       address_transactions_sorting: 1,
-      nft_token_types_options: 1
+      nft_types_options: 1
     ]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
@@ -45,10 +45,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      :to_address => :optional,
-      :from_address => :optional,
+      [to_address: :smart_contract] => :optional,
+      [from_address: :smart_contract] => :optional,
+      [to_address: :names] => :optional,
+      [from_address: :names] => :optional,
       :block => :optional,
-      :transaction => :optional
+      :transaction => :optional,
+      :token => :optional
     },
     api?: true
   ]
@@ -159,8 +162,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       options =
         [
           necessity_by_association: %{
-            :to_address => :optional,
-            :from_address => :optional,
+            [to_address: :smart_contract] => :optional,
+            [from_address: :smart_contract] => :optional,
+            [to_address: :names] => :optional,
+            [from_address: :names] => :optional,
             :block => :optional,
             :token => :optional,
             :transaction => :optional
@@ -448,7 +453,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           address_hash,
           params
           |> paging_options()
-          |> Keyword.merge(nft_token_types_options(params))
+          |> Keyword.merge(nft_types_options(params))
           |> Keyword.merge(@api_true)
           |> Keyword.merge(@nft_necessity_by_association)
         )
@@ -476,7 +481,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           address_hash,
           params
           |> paging_options()
-          |> Keyword.merge(nft_token_types_options(params))
+          |> Keyword.merge(nft_types_options(params))
           |> Keyword.merge(@api_true)
           |> Keyword.merge(@nft_necessity_by_association)
         )
@@ -498,7 +503,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   @doc """
-  Checks if this valid address hash string, and this address is not prohibited address
+    Checks if this valid address hash string, and this address is not prohibited address.
+    Returns the `{:ok, address_hash, address}` if address hash passed all the checks.
   """
   @spec validate_address(String.t(), any(), Keyword.t()) ::
           {:format, :error}

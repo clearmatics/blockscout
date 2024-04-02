@@ -43,7 +43,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
 
   defp get_proxy_eip_1167(contract_bytecode) do
     case contract_bytecode do
-      "363d3d373d3d3d363d73" <> <<template_address::binary-size(40)>> <> _ ->
+      "363d3d373d3d3d363d73" <> <<template_address::binary-size(40)>> <> "5af43d82803e903d91602b57fd5bf3" ->
+        "0x" <> template_address
+
+      # https://medium.com/coinmonks/the-more-minimal-proxy-5756ae08ee48
+      "3d3d3d3d363d3d37363d73" <> <<template_address::binary-size(40)>> <> "5af43d3d93803e602a57fd5bf3" ->
         "0x" <> template_address
 
       _ ->
@@ -54,8 +58,13 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
   defp implementation_to_smart_contract(nil, _options), do: nil
 
   defp implementation_to_smart_contract(address_hash, options) do
+    necessity_by_association = %{
+      :smart_contract_additional_sources => :optional
+    }
+
     address_hash
     |> SmartContract.get_smart_contract_query()
+    |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).one(timeout: 10_000)
   end
 end
