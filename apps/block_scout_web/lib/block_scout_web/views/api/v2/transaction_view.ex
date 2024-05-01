@@ -147,10 +147,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("internal_transactions.json", %{
         internal_transactions: internal_transactions,
         next_page_params: next_page_params,
-        conn: conn
+        block: block
       }) do
     %{
-      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, conn)),
+      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, block)),
+      "next_page_params" => next_page_params
+    }
+  end
+
+  def render("internal_transactions.json", %{
+        internal_transactions: internal_transactions,
+        next_page_params: next_page_params
+      }) do
+    %{
+      "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1)),
       "next_page_params" => next_page_params
     }
   end
@@ -288,7 +298,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  def prepare_internal_transaction(internal_transaction, _conn) do
+  def prepare_internal_transaction(internal_transaction, block \\ nil) do
     %{
       "error" => internal_transaction.error,
       "success" => is_nil(internal_transaction.error),
@@ -307,9 +317,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         ),
       "value" => internal_transaction.value,
       "block" => internal_transaction.block_number,
-      "timestamp" => internal_transaction.block.timestamp,
+      "timestamp" => (block && block.timestamp) || internal_transaction.block.timestamp,
       "index" => internal_transaction.index,
-      "gas_limit" => internal_transaction.gas
+      "gas_limit" => internal_transaction.gas,
+      "block_index" => internal_transaction.block_index
     }
   end
 
@@ -784,7 +795,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   case Application.compile_env(:explorer, :chain_type) do
-    "polygon_edge" ->
+    :polygon_edge ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -798,7 +809,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "polygon_zkevm" ->
+    :polygon_zkevm ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -812,7 +823,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "zksync" ->
+    :zksync ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -826,7 +837,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "optimism" ->
+    :optimism ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -840,7 +851,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "suave" ->
+    :suave ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -860,7 +871,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "stability" ->
+    :stability ->
       defp chain_type_transformations(transactions) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.StabilityView.transform_transactions(transactions)
@@ -871,7 +882,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         BlockScoutWeb.API.V2.StabilityView.extend_transaction_json_response(result, transaction)
       end
 
-    "ethereum" ->
+    :ethereum ->
       defp chain_type_transformations(transactions) do
         transactions
       end

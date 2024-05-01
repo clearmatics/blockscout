@@ -86,16 +86,18 @@ config :block_scout_web, :footer,
 config :block_scout_web, :contract,
   verification_max_libraries: ConfigHelper.parse_integer_env_var("CONTRACT_VERIFICATION_MAX_LIBRARIES", 10),
   max_length_to_show_string_without_trimming: System.get_env("CONTRACT_MAX_STRING_LENGTH_WITHOUT_TRIMMING", "2040"),
-  disable_interaction: ConfigHelper.parse_bool_env_var("CONTRACT_DISABLE_INTERACTION")
+  disable_interaction: ConfigHelper.parse_bool_env_var("CONTRACT_DISABLE_INTERACTION"),
+  certified_list: ConfigHelper.parse_list_env_var("CONTRACT_CERTIFIED_LIST", "")
 
-default_api_rate_limit = 50
+default_global_api_rate_limit = 50
+default_api_rate_limit_by_key = 10
 
 config :block_scout_web, :api_rate_limit,
   disabled: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_DISABLED"),
-  global_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT", default_api_rate_limit),
-  limit_by_key: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit),
+  global_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT", default_global_api_rate_limit),
+  limit_by_key: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_KEY", default_api_rate_limit_by_key),
   limit_by_whitelisted_ip:
-    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_api_rate_limit),
+    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_WHITELISTED_IP", default_global_api_rate_limit),
   time_interval_limit: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_TIME_INTERVAL", "1s"),
   limit_by_ip: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_BY_IP", 3000),
   time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
@@ -105,6 +107,26 @@ config :block_scout_web, :api_rate_limit,
   api_v2_ui_limit: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_WITH_TOKEN", 5),
   api_v2_token_ttl_seconds: ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL_IN_SECONDS", 18000),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5)
+
+default_graphql_rate_limit = 10
+
+config :block_scout_web, Api.GraphQL,
+  default_transaction_hash:
+    System.get_env(
+      "API_GRAPHQL_DEFAULT_TRANSACTION_HASH",
+      "0x69e3923eef50eada197c3336d546936d0c994211492c9f947a24c02827568f9f"
+    ),
+  enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),
+  token_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_TOKEN_LIMIT", 1000),
+  # Needs to be 215 to support the schema introspection for graphiql
+  max_complexity: ConfigHelper.parse_integer_env_var("API_GRAPHQL_MAX_COMPLEXITY", 215),
+  rate_limit_disabled?: ConfigHelper.parse_bool_env_var("API_GRAPHQL_RATE_LIMIT_DISABLED"),
+  global_limit: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT", default_graphql_rate_limit),
+  limit_by_key: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_KEY", default_graphql_rate_limit),
+  time_interval_limit: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_TIME_INTERVAL", "1s"),
+  limit_by_ip: ConfigHelper.parse_integer_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP", 500),
+  time_interval_limit_by_ip: ConfigHelper.parse_time_env_var("API_GRAPHQL_RATE_LIMIT_BY_IP_TIME_INTERVAL", "5m"),
+  static_api_key: System.get_env("API_GRAPHQL_RATE_LIMIT_STATIC_API_KEY")
 
 # Configures History
 price_chart_config =
@@ -166,7 +188,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
   debug_trace_timeout: System.get_env("ETHEREUM_JSONRPC_DEBUG_TRACE_TRANSACTION_TIMEOUT", "5s"),
   tracer:
-    if(ConfigHelper.chain_type() == "polygon_edge",
+    if(ConfigHelper.chain_type() == :polygon_edge,
       do: "polygon_edge",
       else: System.get_env("INDEXER_INTERNAL_TRANSACTIONS_TRACER_TYPE", "call_tracer")
     )
@@ -224,10 +246,23 @@ config :explorer, Explorer.Chain.Events.Listener,
       else: true
     )
 
+precompiled_config_base_dir =
+  case config_env() do
+    :prod -> "/app/"
+    _ -> "./"
+  end
+
+precompiled_config_default_path =
+  case ConfigHelper.chain_type() do
+    "arbitrum" -> "#{precompiled_config_base_dir}config/assets/precompiles-arbitrum.json"
+    _ -> nil
+  end
+
 config :explorer, Explorer.ChainSpec.GenesisData,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
-  rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
+  rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5"),
+  precompiled_config_path: System.get_env("PRECOMPILED_CONTRACTS_CONFIG_PATH", precompiled_config_default_path)
 
 address_sum_global_ttl = ConfigHelper.parse_time_env_var("CACHE_ADDRESS_SUM_PERIOD", "1h")
 
@@ -263,7 +298,7 @@ config :explorer, Explorer.Chain.Cache.RootstockLockedBTC,
   global_ttl: ConfigHelper.parse_time_env_var("ROOTSTOCK_LOCKED_BTC_CACHE_PERIOD", "10m"),
   locking_cap: ConfigHelper.parse_integer_env_var("ROOTSTOCK_LOCKING_CAP", 21_000_000)
 
-config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == "optimism"
+config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
 config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_PERIOD", "30m")
@@ -292,8 +327,8 @@ config :explorer, Explorer.Counters.AddressTokenTransfersCounter,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
 
 config :explorer, Explorer.Counters.LastOutputRootSizeCounter,
-  enabled: ConfigHelper.chain_type() == "optimism",
-  enable_consolidation: ConfigHelper.chain_type() == "optimism",
+  enabled: ConfigHelper.chain_type() == :optimism,
+  enable_consolidation: ConfigHelper.chain_type() == :optimism,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
 
 config :explorer, Explorer.Counters.Transactions24hStats,
@@ -321,6 +356,7 @@ config :explorer, Explorer.ExchangeRates.Source,
 cmc_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINMARKETCAP_SECONDARY_COIN_ID")
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
+  base_url: System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL"),
   api_key: System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID"),
   secondary_coin_id: cmc_secondary_coin_id
@@ -329,6 +365,8 @@ cg_secondary_coin_id = System.get_env("EXCHANGE_RATES_COINGECKO_SECONDARY_COIN_I
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko,
   platform: System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
+  base_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_URL"),
+  base_pro_url: System.get_env("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL"),
   api_key: System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coin_id: System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   secondary_coin_id: cg_secondary_coin_id
@@ -422,6 +460,10 @@ config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
 
+config :explorer, Explorer.ThirdPartyIntegrations.Zerion,
+  service_url: System.get_env("ZERION_BASE_API_URL", "https://api.zerion.io/v1"),
+  api_key: System.get_env("ZERION_API_TOKEN")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
@@ -448,6 +490,10 @@ config :explorer, Explorer.MicroserviceInterfaces.BENS,
 config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
   service_url: System.get_env("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_ENABLED")
+
+config :explorer, Explorer.MicroserviceInterfaces.Metadata,
+  service_url: System.get_env("MICROSERVICE_METADATA_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_METADATA_ENABLED")
 
 config :explorer, :air_table_public_tags,
   table_url: System.get_env("ACCOUNT_PUBLIC_TAGS_AIRTABLE_URL"),
@@ -566,7 +612,14 @@ config :indexer,
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 2000),
-  ipfs_gateway_url: System.get_env("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs")
+  graceful_shutdown_period: ConfigHelper.parse_time_env_var("INDEXER_GRACEFUL_SHUTDOWN_PERIOD", "5m")
+
+config :indexer, :ipfs,
+  gateway_url: System.get_env("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs"),
+  gateway_url_param_key: System.get_env("IPFS_GATEWAY_URL_PARAM_KEY"),
+  gateway_url_param_value: System.get_env("IPFS_GATEWAY_URL_PARAM_VALUE"),
+  gateway_url_param_location:
+    ConfigHelper.parse_catalog_value("IPFS_GATEWAY_URL_PARAM_LOCATION", ["query", "header"], true)
 
 config :indexer, Indexer.Supervisor, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_INDEXER")
 
@@ -598,13 +651,16 @@ config :indexer, Indexer.Fetcher.TokenBalance,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_CONCURRENCY", 10)
 
-config :indexer, Indexer.Fetcher.TokenBalanceOnDemand,
+config :indexer, Indexer.Fetcher.OnDemand.TokenBalance,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
   fallback_threshold_in_blocks: 500
 
-config :indexer, Indexer.Fetcher.CoinBalanceOnDemand,
+config :indexer, Indexer.Fetcher.OnDemand.CoinBalance,
   threshold: ConfigHelper.parse_time_env_var("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
   fallback_threshold_in_blocks: 500
+
+config :indexer, Indexer.Fetcher.OnDemand.ContractCode,
+  threshold: ConfigHelper.parse_time_env_var("CONTRACT_CODE_ON_DEMAND_FETCHER_THRESHOLD", "5s")
 
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
@@ -712,11 +768,12 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime,
   batch_size: coin_balances_batch_size,
   concurrency: coin_balances_concurrency
 
-config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
-config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: ConfigHelper.chain_type() == "optimism"
+config :indexer, Indexer.Fetcher.Optimism.TxnBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.DisputeGame.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
+config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
@@ -750,15 +807,15 @@ config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
 
 config :indexer, Indexer.Fetcher.Withdrawal, first_block: System.get_env("WITHDRAWALS_FIRST_BLOCK")
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
+config :indexer, Indexer.Fetcher.PolygonEdge.Deposit.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_edge
 
 config :indexer, Indexer.Fetcher.PolygonEdge.DepositExecute.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_edge"
+  enabled: ConfigHelper.chain_type() == :polygon_edge
 
-config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_edge"
+config :indexer, Indexer.Fetcher.PolygonEdge.Withdrawal.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_edge
 
 config :indexer, Indexer.Fetcher.PolygonEdge.WithdrawalExit.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_edge"
+  enabled: ConfigHelper.chain_type() == :polygon_edge
 
 config :indexer, Indexer.Fetcher.PolygonEdge,
   polygon_edge_l1_rpc: System.get_env("INDEXER_POLYGON_EDGE_L1_RPC"),
@@ -798,7 +855,7 @@ config :indexer, Indexer.Fetcher.ZkSync.BatchesStatusTracker.Supervisor,
 
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
-    ConfigHelper.chain_type() != "rsk" || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
+    ConfigHelper.chain_type() != :rsk || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")
 
 config :indexer, Indexer.Fetcher.RootstockData,
   interval: ConfigHelper.parse_time_env_var("INDEXER_ROOTSTOCK_DATA_FETCHER_INTERVAL", "3s"),
@@ -810,7 +867,7 @@ config :indexer, Indexer.Fetcher.Beacon, beacon_rpc: System.get_env("INDEXER_BEA
 
 config :indexer, Indexer.Fetcher.Beacon.Blob.Supervisor,
   disabled?:
-    ConfigHelper.chain_type() != "ethereum" ||
+    ConfigHelper.chain_type() != :ethereum ||
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BEACON_BLOB_FETCHER")
 
 config :indexer, Indexer.Fetcher.Beacon.Blob,
@@ -837,27 +894,31 @@ config :indexer, Indexer.Fetcher.Shibarium.L2,
   weth: System.get_env("INDEXER_SHIBARIUM_L2_WETH_CONTRACT"),
   bone_withdraw: System.get_env("INDEXER_SHIBARIUM_L2_BONE_WITHDRAW_CONTRACT")
 
-config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor, enabled: ConfigHelper.chain_type() == "shibarium"
+config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor, enabled: ConfigHelper.chain_type() == :shibarium
 
-config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor, enabled: ConfigHelper.chain_type() == "shibarium"
+config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor, enabled: ConfigHelper.chain_type() == :shibarium
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1,
   rpc: System.get_env("INDEXER_POLYGON_ZKEVM_L1_RPC"),
   start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK"),
   bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_CONTRACT"),
   native_symbol: System.get_env("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_SYMBOL", "ETH"),
-  native_decimals: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_DECIMALS", 18)
+  native_decimals: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_DECIMALS", 18),
+  rollup_network_id_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID"),
+  rollup_index_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_ROLLUP_INDEX")
 
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_zkevm
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor,
-  enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+  enabled: ConfigHelper.chain_type() == :polygon_zkevm
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2,
   start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK"),
-  bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_CONTRACT")
+  bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_CONTRACT"),
+  rollup_network_id_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID"),
+  rollup_index_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_ROLLUP_INDEX")
 
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == "polygon_zkevm"
+config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_zkevm
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_CHUNK_SIZE", 20),
@@ -865,7 +926,7 @@ config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
 
 config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
   enabled:
-    ConfigHelper.chain_type() == "polygon_zkevm" &&
+    ConfigHelper.chain_type() == :polygon_zkevm &&
       ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
 Code.require_file("#{config_env()}.exs", "config/runtime")

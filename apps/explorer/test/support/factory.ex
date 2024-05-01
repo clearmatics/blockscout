@@ -550,7 +550,7 @@ defmodule Explorer.Factory do
         collated_params
       )
       when is_list(collated_params) do
-    next_transaction_index = block_hash_to_next_transaction_index(block_hash)
+    next_transaction_index = collated_params[:index] || block_hash_to_next_transaction_index(block_hash)
 
     cumulative_gas_used = collated_params[:cumulative_gas_used] || Enum.random(21_000..100_000)
     gas_used = collated_params[:gas_used] || Enum.random(21_000..100_000)
@@ -885,7 +885,8 @@ defmodule Explorer.Factory do
       contract_code_md5: bytecode_md5,
       verified_via_sourcify: Enum.random([true, false]),
       is_vyper_contract: Enum.random([true, false]),
-      verified_via_eth_bytecode_db: Enum.random([true, false])
+      verified_via_eth_bytecode_db: Enum.random([true, false]),
+      verified_via_verifier_alliance: Enum.random([true, false])
     }
   end
 

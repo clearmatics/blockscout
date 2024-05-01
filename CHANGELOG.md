@@ -1,17 +1,132 @@
-# ChangeLog
+# Changelog
 
-## Current
+## 6.5.0
 
-### Features
+### 🚀 Features
 
-### Fixes
+- Certified smart contracts ([#9910](https://github.com/blockscout/blockscout/issues/9910))
+- Exit on provided invalid CHAIN_TYPE ([#9904](https://github.com/blockscout/blockscout/issues/9904))
+- IPFS gateway URL extra params ([#9898](https://github.com/blockscout/blockscout/issues/9898))
+- Zerion API proxy ([#9896](https://github.com/blockscout/blockscout/issues/9896))
+- Support Optimism Fault Proofs ([#9892](https://github.com/blockscout/blockscout/issues/9892))
+- Return number of days in address's coin-balance-history-by-day API v2 endpoint ([#9806](https://github.com/blockscout/blockscout/issues/9806))
+- Allow the use of Coingecko demo account ([#9835](https://github.com/blockscout/blockscout/issues/9835))
 
-### Chore
+### 🐛 Bug Fixes
 
-<details>
-  <summary>Dependencies version bumps</summary>
+- Set refetch_needed: false on block import ([#9953](https://github.com/blockscout/blockscout/issues/9953))
+- `GAS_PRICE_ORACLE_NUM_OF_BLOCKS` calculation ([#9943](https://github.com/blockscout/blockscout/issues/9943))
+- Handle "null" filter in api/v1/logs-csv ([#9933](https://github.com/blockscout/blockscout/issues/9933))
+- Fix metadata preload ([#9925](https://github.com/blockscout/blockscout/issues/9925))
+- `coin_price_change_percentage` calculation ([#9774](https://github.com/blockscout/blockscout/issues/9774))
+- Remove backend dependency in microservices.yml ([#9905](https://github.com/blockscout/blockscout/issues/9905))
+- Expand memory only if it was shrunk ([#9907](https://github.com/blockscout/blockscout/issues/9907))
+- Coin balances fetcher error logging ([#9902](https://github.com/blockscout/blockscout/issues/9902))
+- Refactor catchup rudimentaries + fix graceful shutdown ([#9729](https://github.com/blockscout/blockscout/issues/9729))
+- Handle transactions with `gas_price` set to `nil` in `transaction_revert_reason/2` ([#9647](https://github.com/blockscout/blockscout/issues/9647))
+- Correct processing of sized array to view in API v2 ([#9854](https://github.com/blockscout/blockscout/issues/9854))
+- Broadcast realtime coin balances ([#9804](https://github.com/blockscout/blockscout/issues/9804))
+- Disable BlockReward fetcher for unsupported variants ([#9859](https://github.com/blockscout/blockscout/issues/9859))
+- Add non-unique log_index support in update_token_instances_owner ([#9862](https://github.com/blockscout/blockscout/issues/9862))
 
-</details>
+### ⚡ Performance
+
+- Paging function edge cases fix ([#9820](https://github.com/blockscout/blockscout/issues/9820))
+- Adjust unfetched_address_token_balances_index to fit all bound query conditions ([#9912](https://github.com/blockscout/blockscout/issues/9912))
+- Enhance index for token holders list ([#9816](https://github.com/blockscout/blockscout/issues/9816))
+- Improve performance of token page transfers tab ([#9809](https://github.com/blockscout/blockscout/issues/9809))
+
+### ⚙️ Miscellaneous Tasks
+
+- Fix some typos in comments ([#9900](https://github.com/blockscout/blockscout/issues/9900))
+- Add queue expanding logic to memory monitor ([#9870](https://github.com/blockscout/blockscout/issues/9870))
+- Bump ex_doc from 0.31.2 to 0.32.1 ([#9889](https://github.com/blockscout/blockscout/issues/9889))
+- Separate reorgs from blocks that just need refetch ([#9674](https://github.com/blockscout/blockscout/issues/9674))
+- Unknown token in email template ([#9883](https://github.com/blockscout/blockscout/issues/9883))
+- Bump tesla from 1.8.0 to 1.9.0 ([#9886](https://github.com/blockscout/blockscout/issues/9886))
+- Bump logger_file_backend from 0.0.13 to 0.0.14 ([#9885](https://github.com/blockscout/blockscout/issues/9885))
+- Bump cloak_ecto from 1.2.0 to 1.3.0 ([#9890](https://github.com/blockscout/blockscout/issues/9890))
+- Bump ex_secp256k1 from 0.7.2 to 0.7.3 ([#9888](https://github.com/blockscout/blockscout/issues/9888))
+- Bump ex_cldr_units from 3.16.4 to 3.16.5 ([#9884](https://github.com/blockscout/blockscout/issues/9884))
+- Move `has_methods_*` fields to `/smart-contracts` endpoint response ([#9599](https://github.com/blockscout/blockscout/issues/9599))
+- Add metrics for realtime event handlers queue length ([#9822](https://github.com/blockscout/blockscout/issues/9822))
+- Increase MissingRangesCollector past check interval after the first cycle ([#9872](https://github.com/blockscout/blockscout/issues/9872))
+- Reduce number of warnings in web tests ([#9851](https://github.com/blockscout/blockscout/issues/9851))
+- Fix some typos in conments ([#9838](https://github.com/blockscout/blockscout/issues/9838))
+- Bump ex_abi from 0.7.1 to 0.7.2 ([#9841](https://github.com/blockscout/blockscout/issues/9841))
+- Remove /config/json-rpc-url API endpoint ([#9798](https://github.com/blockscout/blockscout/issues/9798))
+- Bump junit_formatter from 3.3.1 to 3.4.0 ([#9842](https://github.com/blockscout/blockscout/issues/9842))
+- Bump number from 1.0.4 to 1.0.5 ([#9843](https://github.com/blockscout/blockscout/issues/9843))
+- Bump absinthe_phoenix from 2.0.2 to 2.0.3 ([#9840](https://github.com/blockscout/blockscout/issues/9840))
+- Bump plug_cowboy from 2.7.0 to 2.7.1 ([#9844](https://github.com/blockscout/blockscout/issues/9844))
+
+## 6.4.0
+
+### 🚀 Features
+
+- Secondary coin price in `api/v2/stats` ([#9777](https://github.com/blockscout/blockscout/issues/9777))
+- Add /api/v2/blocks/{hash_or_number}/internal-transactions endpoint ([#9668](https://github.com/blockscout/blockscout/issues/9668))
+- Integrate Metadata microservice ([#9706](https://github.com/blockscout/blockscout/issues/9706))
+- Support verifier alliance and eth-bytecode-db v1.7.0 changes ([#9724](https://github.com/blockscout/blockscout/issues/9724))
+- Add rate limits to graphQL API ([#9771](https://github.com/blockscout/blockscout/issues/9771))
+- Support for internal user operation calldata decoded by microservice ([#9776](https://github.com/blockscout/blockscout/issues/9776))
+- Internal txs fetching for Arbitrum ([#9737](https://github.com/blockscout/blockscout/issues/9737))
+- Allow for custom base_url for fetching prices ([#9679](https://github.com/blockscout/blockscout/issues/9679))
+- Contract code on-demand fetcher ([#9708](https://github.com/blockscout/blockscout/issues/9708))
+- Add /api/v2/tokens/:address_hash_param/holders/csv endpoint ([#9722](https://github.com/blockscout/blockscout/issues/9722))
+- Support the 2nd version of L2<->L1 Polygon zkEVM Bridge ([#9637](https://github.com/blockscout/blockscout/issues/9637))
+- GraphQL management env vars ([#9751](https://github.com/blockscout/blockscout/issues/9751))
+- Improvements in zksync batch related transactions requests ([#9680](https://github.com/blockscout/blockscout/issues/9680))
+- Add trying to decode internal calldata for user ops ([#9675](https://github.com/blockscout/blockscout/issues/9675))
+
+### 🐛 Bug Fixes
+
+- Apply quantity_to_integer/1 to effectiveGasPrice ([#9812](https://github.com/blockscout/blockscout/issues/9812))
+- Replace tx gas_price with effectiveGasPrice from receipt ([#9733](https://github.com/blockscout/blockscout/issues/9733))
+- Fetching GraphQL schema by GraphiQL IDE ([#9630](https://github.com/blockscout/blockscout/issues/9630))
+- Add block range check into OP Withdrawals fetcher ([#9770](https://github.com/blockscout/blockscout/issues/9770))
+- Update token's holder_count in the db from ETS module ([#9623](https://github.com/blockscout/blockscout/issues/9623))
+- Fix UTF-8 json handling in NFT metadata fetching ([#9707](https://github.com/blockscout/blockscout/issues/9707))
+- Separate ZkSync and ZkEvm readers in API controller ([#9749](https://github.com/blockscout/blockscout/issues/9749))
+- Add missing preloads ([#9520](https://github.com/blockscout/blockscout/issues/9520))
+- Change CoinGecko token image attribute priority ([#9671](https://github.com/blockscout/blockscout/issues/9671))
+- Fix Geth block tracing errors handling ([#9672](https://github.com/blockscout/blockscout/issues/9672))
+- Erc-404 token transfers null value ([#9698](https://github.com/blockscout/blockscout/issues/9698))
+- Erc-404 type stored in token balances tables ([#9700](https://github.com/blockscout/blockscout/issues/9700))
+
+### 🚜 Refactor
+
+- `Enum.count` to `Enum.empty?` ([#9666](https://github.com/blockscout/blockscout/issues/9666))
+
+### ⚡ Performance
+
+- Add EIP4844 blob transactions index ([#9661](https://github.com/blockscout/blockscout/issues/9661))
+
+### ⚙️ Miscellaneous Tasks
+
+- Rework chain type matrix in CI runs ([#9704](https://github.com/blockscout/blockscout/issues/9704))
+- Exclude latest tag update from alpha releases ([#9800](https://github.com/blockscout/blockscout/issues/9800))
+- Reduce default API v1 limit by key 50 -> 10 ([#9799](https://github.com/blockscout/blockscout/issues/9799))
+- Bump autoprefixer in /apps/block_scout_web/assets ([#9786](https://github.com/blockscout/blockscout/issues/9786))
+- Remove /api/account/v1 path ([#9660](https://github.com/blockscout/blockscout/issues/9660))
+- Bump sass from 1.71.1 to 1.72.0 in /apps/block_scout_web/assets ([#9780](https://github.com/blockscout/blockscout/issues/9780))
+- Bump @babel/core in /apps/block_scout_web/assets ([#9782](https://github.com/blockscout/blockscout/issues/9782))
+- Bump webpack in /apps/block_scout_web/assets ([#9787](https://github.com/blockscout/blockscout/issues/9787))
+- Bump postcss in /apps/block_scout_web/assets ([#9785](https://github.com/blockscout/blockscout/issues/9785))
+- Bump @amplitude/analytics-browser in /apps/block_scout_web/assets ([#9788](https://github.com/blockscout/blockscout/issues/9788))
+- Bump solc from 0.8.24 to 0.8.25 in /apps/explorer ([#9789](https://github.com/blockscout/blockscout/issues/9789))
+- Bump sweetalert2 in /apps/block_scout_web/assets ([#9783](https://github.com/blockscout/blockscout/issues/9783))
+- Bump @babel/preset-env in /apps/block_scout_web/assets ([#9784](https://github.com/blockscout/blockscout/issues/9784))
+- Bump core-js in /apps/block_scout_web/assets ([#9781](https://github.com/blockscout/blockscout/issues/9781))
+- Enable Rust sc-verifier microservice by default ([#9752](https://github.com/blockscout/blockscout/issues/9752))
+- Temporarily ignore OP batches written to Celestia ([#9734](https://github.com/blockscout/blockscout/issues/9734))
+- Bump cldr_utils from 2.24.2 to 2.25.0 ([#9723](https://github.com/blockscout/blockscout/issues/9723))
+- Bump express in /apps/block_scout_web/assets ([#9725](https://github.com/blockscout/blockscout/issues/9725))
+- Bump bureaucrat from 0.2.9 to 0.2.10 ([#9669](https://github.com/blockscout/blockscout/issues/9669))
+- Fix typos ([#9693](https://github.com/blockscout/blockscout/issues/9693))
+- Bump follow-redirects from 1.15.4 to 1.15.6 in /apps/explorer ([#9648](https://github.com/blockscout/blockscout/issues/9648))
+- Bump floki from 0.36.0 to 0.36.1 ([#9670](https://github.com/blockscout/blockscout/issues/9670))
+- Use git-cliff changelog generator ([#9687](https://github.com/blockscout/blockscout/issues/9687))
 
 ## 6.3.0
 

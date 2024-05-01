@@ -18,6 +18,7 @@
         "Asfpp",
         "Autodetection",
         "Autonity",
+        "bitmask",
         "Blockchair",
         "CALLCODE",
         "CBOR",
@@ -367,6 +368,7 @@
         "munknownc",
         "munknowne",
         "mydep",
+        "mykey",
         "nanomorph",
         "nbsp",
         "newkey",
@@ -595,6 +597,7 @@
         "yellowgreen",
         "zaphod",
         "zeppelinos",
+        "zerion",
         "zetachain",
         "zftv",
         "ziczr",
@@ -629,7 +632,10 @@
         "zksync",
         "filecoin",
         "Filecoin",
-        "permissionless"
+        "permissionless",
+        "feelin",
+        "KnxbUejwY",
+        "Btvk"
     ],
     "enableFiletypes": [
         "dotenv",
